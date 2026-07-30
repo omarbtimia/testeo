@@ -30,6 +30,9 @@ jobs:
       - name: Verificar que .clasprc.json no esté vacío
         run: cat ~/.clasprc.json
 
+      - name: Verificar qué archivos existen localmente
+        run: ls -la ./src
+
       - name: Sincronizar archivos con Apps Script (Push)
         run: clasp push -f
 
