@@ -1,0 +1,491 @@
+<script>
+    // ===============================================
+    // VARIABLES GLOBALES Y ELEMENTOS DOM
+    // ===============================================
+
+    // Elementos de la UI
+    const docUrlInput = document.getElementById('docUrl');
+    const btnAuth = document.getElementById('btnAuth');
+    const btnProcesar = document.getElementById('btnProcesar');
+    const btnLimpiar = document.getElementById('btnLimpiar');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const resultsDiv = document.getElementById('results');
+
+    // ===============================================
+    // INICIALIZACIÓN
+    // ===============================================
+
+    // Desactivar botón de autenticación (ya que en Apps Script ya viene autenticado)
+    btnAuth.disabled = true;
+
+    // Obtener y mostrar el email del usuario
+    function cargarEmailUsuario() {
+      try {
+        google.script.run
+          .withSuccessHandler(function(email) {
+            document.getElementById('userEmail').textContent = email || 'usuario@bbva.com';
+          })
+          .withFailureHandler(function(error) {
+            document.getElementById('userEmail').textContent = 'usuario@bbva.com';
+            addLogEntry('No se pudo obtener email del usuario, usando valor por defecto', 'warning');
+          })
+          .obtenerEmailUsuario();
+      } catch (e) {
+        document.getElementById('userEmail').textContent = 'usuario@bbva.com';
+        addLogEntry('Google Apps Script no disponible (modo desarrollo)', 'warning');
+      }
+
+      // --- SEGUNDA LLAMADA: Obtener Propiedad ---
+      try { // <-- Faltaba este 'try'
+        google.script.run
+          .withSuccessHandler(function(propiedad) {
+            // Corrección: Se quitó la comilla doble extra del ID
+            document.getElementById('mensaje-propiedad').textContent = propiedad || 'usuario@bbva.com';
+          })
+          .withFailureHandler(function(error) {
+            document.getElementById('mensaje-propiedad').textContent = 'usuario@bbva.com';
+            addLogEntry('No se pudo obtener la propiedad, usando valor por defecto: ' + error, 'warning');
+          })
+          .obtenerPropiedad();
+      } catch (e) { // Ahora este 'catch' sí tiene sentido
+        document.getElementById('mensaje-propiedad').textContent = 'usuario@bbva.com';
+        addLogEntry('Google Apps Script no disponible (modo desarrollo)', 'warning');
+      }
+    }
+
+    // Ejecutar al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+      cargarEmailUsuario();
+    });
+
+    // ===============================================
+    // FUNCIONES DE UTILIDAD
+    // ===============================================
+
+    // Funciones de utilidad para logs con timestamp y emojis - ORDEN INVERSO
+    function addLogEntry(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+
+      const now = new Date();
+      const timestamp = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+      // Agregar emojis si el mensaje no los tiene
+      if (!/^[🔍✅⚠️❌📊📥📄🔄📋🏛️🔧💡ℹ️⭐🎯🚀🚫💎🔷🔹👤🧹]/.test(message)) {
+        let emoji = '🔹';
+        if (type === 'success') emoji = '✅';
+        if (type === 'warning') emoji = '⚠️';
+        if (type === 'error') emoji = '❌';
+        if (type === 'info') emoji = 'ℹ️';
+
+        entry.innerHTML = `${emoji} ${message} <span class="log-timestamp">${timestamp}</span>`;
+      } else {
+        entry.innerHTML = `${message} <span class="log-timestamp">${timestamp}</span>`;
+      }
+
+      const logsDisplay = document.getElementById('logs');
+      // CAMBIO: Insertar al FINAL en lugar del PRINCIPIO para orden cronológico normal
+      logsDisplay.appendChild(entry);
+
+      // Mantener scroll al final para ver las últimas entradas
+      logsDisplay.scrollTop = logsDisplay.scrollHeight;
+
+      // Limitar a 15 entradas para mantener rendimiento
+      if (logsDisplay.children.length > 15) {
+        logsDisplay.removeChild(logsDisplay.firstChild);
+      }
+    }
+
+    // NUEVA FUNCIÓN: Limpiar logs
+    function clearLogs() {
+      const logsDisplay = document.getElementById('logs');
+      logsDisplay.innerHTML = '';
+    }
+
+    // Función para actualizar la barra de progreso
+    function updateProgress(percent) {
+      progressBar.style.width = `${percent}%`;
+      progressPercentage.textContent = `${percent}%`;
+    }
+
+    // Función para validar URL de Google Docs
+    function validarUrlGoogleDocs(url) {
+      if (!url) return false;
+
+      // Patrones válidos para Google Docs
+      const patterns = [
+        /^https:\/\/docs\.google\.com\/document\/d\/[a-zA-Z0-9-_]+/,
+        /^https:\/\/drive\.google\.com\/file\/d\/[a-zA-Z0-9-_]+/
+      ];
+
+      return patterns.some(pattern => pattern.test(url));
+    }
+
+    // Función para restablecer botones al estado original
+    function resetButtons() {
+      btnProcesar.disabled = false;
+      btnProcesar.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        Procesar Documento
+      `;
+
+      btnLimpiar.disabled = false;
+      btnLimpiar.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18"></path>
+          <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+          <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+        </svg>
+        Limpiar Archivos
+      `;
+    }
+
+    // ===============================================
+    // FUNCIÓN PRINCIPAL: PROCESAR DOCUMENTO
+    // ===============================================
+
+    function procesarDocumento() {
+      const docUrl = docUrlInput.value.trim();
+
+      if (!docUrl) {
+        addLogEntry('Por favor, ingresa la URL del documento MSD', 'error');
+        return;
+      }
+
+      if (!validarUrlGoogleDocs(docUrl)) {
+        addLogEntry('La URL debe ser un documento de Google Docs válido', 'error');
+        addLogEntry('Formato esperado: https://docs.google.com/document/d/...', 'warning');
+        return;
+      }
+
+      // CAMBIO: Limpiar logs al iniciar procesamiento
+      clearLogs();
+
+      // Iniciar procesamiento
+      addLogEntry('Iniciando procesamiento del documento MSD...', 'info');
+      updateProgress(10);
+
+      // Deshabilitar botones durante el procesamiento
+      btnProcesar.disabled = true;
+      btnProcesar.innerHTML = '<span class="spinner"></span>Procesando...';
+      btnLimpiar.disabled = true;
+
+      // Llamar a la función del servidor con manejo robusto de errores
+      google.script.run
+        .withSuccessHandler(function(result) {
+          handleProcessingSuccess(result);
+        })
+        .withFailureHandler(function(error) {
+          handleProcessingError(error);
+        })
+        .procesarDocumentoMSD(docUrl);
+    }
+
+    // ===============================================
+    // FUNCIÓN MEJORADA PARA LOGS SIMPLIFICADOS
+    // ===============================================
+
+    function handleProcessingSuccess(result) {
+      // Restablecer botones
+      resetButtons();
+
+      if (result.estado === 'error') {
+        updateProgress(0);
+        addLogEntry(result.mensaje, 'error');
+        addLogEntry(result.respuestaAPI, 'error');
+        return;
+      }
+
+      // ============ INFORMACIÓN DEL DOCUMENTO MSD ============
+      updateProgress(15);
+
+      // Mostrar nombre del documento y URL completa en una sola entrada
+      if (result.nombreDocumento) {
+        addLogEntry(`Nombre del MSD: ${result.nombreDocumento}`, 'info');
+      }
+
+      updateProgress(30);
+
+      // ============ INFORMACIÓN DE DOCUMENTOS MSA ============
+      if (result.documentosMSA && result.documentosMSA.length > 0) {
+        addLogEntry(`Se encontraron ${result.documentosMSA.length} documento(s) MSA:`, 'success');
+
+        result.documentosMSA.forEach((doc, index) => {
+          // CAMBIO: Solo mostrar el número y la URL, sin el título
+          addLogEntry(`   ${index + 1}. ${doc.url}`, 'info');
+        });
+      } else {
+        addLogEntry('No se encontraron documentos MSA', 'warning');
+      }
+
+      updateProgress(45);
+
+      // ============ INFORMACIÓN DE DOCUMENTOS SFI ============
+      if (result.documentoSFI && result.documentoSFI.enlaceEncontrado) {
+        addLogEntry(`Documento SFI encontrado:`, 'success');
+
+        // CAMBIO: Solo mostrar la URL, sin el nombre del documento
+        addLogEntry(`   ${result.documentoSFI.enlaceEncontrado}`, 'info');
+
+        // Mostrar información de las tablas extraídas
+        if (result.documentoSFI.valores) {
+          const valoresSFI = result.documentoSFI.valores;
+          let totalElementos = 0;
+          Object.keys(valoresSFI).forEach(columna => {
+            if (valoresSFI[columna] && valoresSFI[columna].length > 0) {
+              totalElementos += valoresSFI[columna].length;
+            }
+          });
+        }
+      } else if (result.errorSFI) {
+        // Mostrar información específica sobre el error SFI
+        if (result.errorSFI.includes("enlace encontrado")) {
+          addLogEntry('   Enlace SFI encontrado en el documento', 'success');
+          addLogEntry('   Error al acceder al documento SFI (permisos o documento no disponible)', 'error');
+        } else if (result.errorSFI.includes("No se encontraron enlaces")) {
+          addLogEntry('   No se encontró enlace a "Solicitud Fuentes de Información" en el MSD', 'error');
+        } else {
+          addLogEntry(`   ${result.errorSFI}`, 'error');
+        }
+      } else {
+        addLogEntry('Buscando documento SFI...', 'info');
+        addLogEntry('   No se encontró enlace a "Solicitud Fuentes de Información" en el MSD', 'error');
+      }
+
+      updateProgress(60);
+
+      // ============ INFORMACIÓN DE DIAGRAMAS (SIN LISTAR) ============
+      if (result.diagramasEncontrados > 0) {
+        updateProgress(75);
+        addLogEntry('Descargando y procesando archivos...', 'info');
+
+        // ============ RESULTADOS DEL PROCESAMIENTO ============
+        if (result.datosExtraidos) {
+          updateProgress(90);
+          addLogEntry('Procesamiento con API completado', 'info');
+
+          updateProgress(95);
+
+          // Mostrar resultados detallados
+          if (Array.isArray(result.datosExtraidos) && result.datosExtraidos.length > 0) {
+            addLogEntry(`Se encontraron ${result.datosExtraidos.length} hallazgo(s) para revisar`, 'warning');
+            showResults(result.datosExtraidos);
+          } else if (result.datosExtraidos === 'Sin problemas detectados') {
+            addLogEntry('No se encontraron problemas en el documento', 'success');
+            showResults([]);
+          } else {
+            addLogEntry('Procesamiento completado sin hallazgos específicos', 'info');
+            showResults([]);
+          }
+
+          // Auto-reset de progreso después de 5 segundos
+          setTimeout(() => {
+            updateProgress(0);
+          }, 5000);
+        } else {
+          updateProgress(0);
+          addLogEntry('Error en el procesamiento con API', 'error');
+        }
+      } else {
+        updateProgress(0);
+        addLogEntry('No se encontraron diagramas en el documento', 'warning');
+        addLogEntry('Verifica que el documento contenga diagramas válidos', 'info');
+      }
+    }
+
+    function handleProcessingError(error) {
+      // Restablecer botones
+      resetButtons();
+      updateProgress(0);
+
+      // Mostrar error con contexto
+      addLogEntry(`Error de comunicación con el servidor`, 'error');
+      addLogEntry(`Detalles: ${error.message || error}`, 'error');
+      addLogEntry('Intenta nuevamente o contacta al administrador', 'warning');
+    }
+
+    // ===============================================
+    // FUNCIÓN SECUNDARIA: LIMPIAR ARCHIVOS
+    // ===============================================
+
+    function limpiarArchivos() {
+      addLogEntry('Iniciando limpieza de archivos temporales...', 'info');
+
+      // Deshabilitar botones durante el procesamiento
+      btnLimpiar.disabled = true;
+      btnLimpiar.innerHTML = '<span class="spinner"></span>Limpiando...';
+      btnProcesar.disabled = true;
+
+      // Llamar a la función del servidor
+      google.script.run
+        .withSuccessHandler(function(result) {
+          handleCleanupSuccess(result);
+        })
+        .withFailureHandler(function(error) {
+          handleCleanupError(error);
+        })
+        .limpiarArchivosTemporales();
+    }
+
+    function handleCleanupSuccess(result) {
+      // Restablecer botones
+      resetButtons();
+
+      if (result.estado === 'success') {
+        addLogEntry(result.mensaje, 'success');
+        addLogEntry('Archivos temporales eliminados correctamente', 'success');
+      } else if (result.estado === 'warning') {
+        addLogEntry(result.mensaje, 'warning');
+      } else {
+        addLogEntry(result.mensaje, 'error');
+      }
+    }
+
+    function handleCleanupError(error) {
+      // Restablecer botones
+      resetButtons();
+
+      addLogEntry(`Error en la limpieza: ${error.message || error}`, 'error');
+      addLogEntry('Algunos archivos temporales pueden persistir', 'warning');
+    }
+
+    // ===============================================
+    // FUNCIONES PARA RESULTADOS
+    // ===============================================
+
+    // Función para mostrar resultados - VERSIÓN SIMPLIFICADA
+    function showResults(results) {
+      const resultsContainer = document.getElementById('results');
+      const exportBtn = document.getElementById('exportBtn');
+
+      if (!results || results.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="results-empty">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            No se encontraron problemas en el documento
+          </div>
+        `;
+        exportBtn.style.display = 'none';
+        return;
+      }
+
+      // Crear contenido consolidado sin numeración
+      let consolidatedContent = results.join('\n\n');
+
+      const html = `
+        <div class="result-item">
+          <div class="result-header">
+            <div class="result-title-item">Hallazgos Encontrados (${results.length})</div>
+          </div>
+          <div class="result-content" id="consolidated-results">${consolidatedContent}</div>
+        </div>
+      `;
+
+      resultsContainer.innerHTML = html;
+      exportBtn.style.display = 'block';
+    }
+
+    // Función para copiar todos los resultados al portapapeles
+    function copyAllResults() {
+      const element = document.getElementById('consolidated-results');
+      if (!element) {
+        addLogEntry('No hay resultados para copiar', 'warning');
+        return;
+      }
+
+      const text = element.textContent;
+
+      navigator.clipboard.writeText(text).then(() => {
+        addLogEntry('Todos los resultados copiados al portapapeles', 'success');
+
+        // Efecto visual en el botón
+        const btn = document.getElementById('exportBtn');
+        btn.classList.add('copied');
+        btn.innerHTML = '✓ Copiado';
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = 'Copiar Todo';
+        }, 2000);
+      }).catch(err => {
+        addLogEntry('Error al copiar: ' + err.message, 'error');
+      });
+    }
+
+    // Función para copiar al portapapeles
+    function copyToClipboard(elementId, button) {
+      const element = document.getElementById(elementId);
+      const text = element.textContent;
+
+      navigator.clipboard.writeText(text).then(() => {
+        button.classList.add('copied');
+        setTimeout(() => {
+          button.classList.remove('copied');
+        }, 2000);
+
+        addLogEntry('Resultado copiado al portapapeles', 'success');
+      }).catch(err => {
+        addLogEntry('Error al copiar: ' + err.message, 'error');
+      });
+    }
+
+    // ===============================================
+    // EVENT LISTENERS
+    // ===============================================
+
+    // Agregar eventos a los botones
+    btnProcesar.addEventListener('click', function() {
+      // En producción usa procesarDocumento(), en desarrollo usa simulateProcessing()
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        procesarDocumento();
+      } else {
+        simulateProcessing();
+      }
+    });
+
+    // Limpieza de archivos temporales
+    btnLimpiar.addEventListener('click', limpiarArchivos);
+
+    // Permitir procesar con Enter en el input
+    docUrlInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter' && !btnProcesar.disabled) {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          procesarDocumento();
+        } else {
+          simulateProcessing();
+        }
+      }
+    });
+
+    // Validación en tiempo real de la URL
+    docUrlInput.addEventListener('input', function() {
+      const url = this.value.trim();
+
+      if (url.length > 10) {
+        if (validarUrlGoogleDocs(url)) {
+          this.style.borderColor = 'var(--bbva-success)';
+          this.style.boxShadow = '0 0 0 3px rgba(40, 167, 69, 0.1)';
+        } else {
+          this.style.borderColor = 'var(--bbva-error)';
+          this.style.boxShadow = '0 0 0 3px rgba(220, 53, 69, 0.1)';
+        }
+      } else {
+        this.style.borderColor = 'var(--bbva-border)';
+        this.style.boxShadow = 'none';
+      }
+    });
+
+    // ===============================================
+    // INICIALIZACIÓN FINAL
+    // ===============================================
+
+    addLogEntry('TAL-IA DEV inicializado correctamente', 'info');
+
+</script>

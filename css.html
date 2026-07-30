@@ -1,0 +1,682 @@
+<style>
+    /* ===============================================
+       VARIABLES Y CONFIGURACIÓN GLOBAL
+       =============================================== */
+    :root {
+      --bbva-blue: #004481;
+      --bbva-blue-light: #1464A5;
+      --bbva-teal: #2dcccd;
+      --bbva-dark: #121212;
+      --bbva-dark-gray: #333;
+      --bbva-gray: #666;
+      --bbva-light-gray: #f4f4f4;
+      --bbva-border: #ddd;
+      --bbva-border-light: #e9ecef;
+      --bbva-success: #28a745;
+      --bbva-error: #dc3545;
+      --bbva-warning: #ffc107;
+      --bbva-info: #17a2b8;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+      --transition-fast: all 0.2s ease;
+      --transition-normal: all 0.3s ease;
+    }
+
+    /* ===============================================
+       ESTILOS GENERALES Y RESET
+       =============================================== */
+    html {
+      height: 100%;
+      overflow-y: scroll;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: 'Inter', 'Arial', sans-serif;
+      background-color: #f7f9fc;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      line-height: 1.5;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px 80px 20px; /* Agregado padding inferior de 80px */
+    }
+
+    /* ===============================================
+       PERSONALIZACIÓN DE SCROLLBAR
+       =============================================== */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #aaa;
+      border-radius: 6px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+    /* ===============================================
+       HEADER BBVA
+       =============================================== */
+    .bbva-header {
+      background: linear-gradient(90deg, var(--bbva-blue) 0%, var(--bbva-blue-light) 100%);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 8px;
+      margin: 16px 0;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .logo-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .title-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      height: 40px;
+      background-color: white;
+      padding: 6px;
+      border-radius: 6px;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+    }
+
+    .header-title svg {
+      margin-right: 10px;
+    }
+
+    .header-title h1 {
+      font-size: 22px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      gap: 8px;
+    }
+
+    /* ===============================================
+       SECCIÓN DE FORMULARIO
+       =============================================== */
+    .form-section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--bbva-border-light);
+    }
+
+    .section-title {
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: var(--bbva-blue);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 18px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--bbva-blue-light);
+    }
+
+    .form-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: var(--bbva-dark-gray);
+      min-width: 140px;
+      text-align: right;
+      font-size: 14px;
+    }
+
+    .form-group input[type="text"] {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid var(--bbva-border);
+      background-color: white;
+      color: var(--bbva-dark-gray);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: 'Inter', 'Arial', sans-serif;
+      transition: var(--transition-fast);
+    }
+
+    .form-group input[type="text"]:focus {
+      outline: none;
+      border-color: var(--bbva-blue-light);
+      box-shadow: 0 0 0 3px rgba(20, 100, 165, 0.1);
+    }
+
+    .form-group input[type="text"]::placeholder {
+      color: #aaa;
+      font-style: italic;
+    }
+
+    /* ===============================================
+       BOTONES DE ACCIÓN
+       =============================================== */
+    .button-group {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin: 24px 0;
+      flex-wrap: wrap;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--bbva-border-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn {
+      padding: 14px 24px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      min-width: 160px;
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      position: relative;
+      overflow: hidden;
+      font-family: 'Inter', 'Arial', sans-serif;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .btn:hover:not(:disabled)::before {
+      left: 100%;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-success {
+      background-color: var(--bbva-success);
+      color: white;
+      border-color: var(--bbva-success);
+    }
+
+    .btn-primary {
+      background-color: var(--bbva-blue);
+      color: white;
+      border-color: var(--bbva-blue);
+    }
+
+    .btn-warning {
+      background-color: var(--bbva-warning);
+      color: #000;
+      border-color: var(--bbva-warning);
+    }
+
+    /* ===============================================
+       BARRA DE PROGRESO
+       =============================================== */
+    .progress-container {
+      margin: 24px 0;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--bbva-border-light);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .progress-header label {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--bbva-dark-gray);
+    }
+
+    #progressPercentage {
+      font-size: 14px;
+      color: var(--bbva-gray);
+      font-weight: 500;
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      background-color: var(--bbva-light-gray);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--bbva-border-light);
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--bbva-blue) 0%, var(--bbva-teal) 100%);
+      width: 0%;
+      transition: width 0.4s ease;
+      border-radius: 6px;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    /* ===============================================
+       LOGS MEJORADOS Y FUNCIONALES
+       =============================================== */
+    .logs-section {
+      margin: 24px 0;
+    }
+
+    .logs-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--bbva-blue);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--bbva-border-light);
+    }
+
+    .logs-container {
+      background: white;
+      border: 1px solid var(--bbva-border-light);
+      border-radius: 12px;
+      padding: 20px;
+      max-height: 320px; /* Aumentado para información detallada */
+      overflow-y: auto;
+      box-shadow: var(--shadow-sm);
+      font-family: 'Inter', 'Arial', sans-serif;
+      font-size: 13px;
+    }
+
+    .log-entry {
+      margin-bottom: 8px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border-left: 3px solid transparent;
+      background-color: rgba(0,0,0,0.02);
+      transition: var(--transition-fast);
+      position: relative;
+      word-wrap: break-word;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      line-height: 1.4;
+    }
+
+    .log-entry:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+
+    .log-entry:last-child {
+      margin-bottom: 0;
+    }
+
+    .log-entry small {
+      display: block;
+      margin-top: 4px;
+      padding-left: 16px;
+      font-size: 10px !important;
+      line-height: 1.3;
+      word-break: break-all;
+      color: #666;
+      font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+      background-color: rgba(0,0,0,0.03);
+      padding: 4px 8px;
+      border-radius: 4px;
+      border-left: 2px solid #ccc;
+    }
+
+    .log-timestamp {
+      float: right;
+      font-size: 11px;
+      opacity: 0.6;
+      font-family: 'Monaco', 'Consolas', monospace;
+      margin-left: 10px;
+    }
+
+    .log-info {
+      color: var(--bbva-info);
+      border-left-color: var(--bbva-info);
+      background-color: rgba(23, 162, 184, 0.05);
+    }
+
+    .log-info small {
+      border-left-color: var(--bbva-info);
+    }
+
+    .log-success {
+      color: var(--bbva-success);
+      border-left-color: var(--bbva-success);
+      background-color: rgba(40, 167, 69, 0.05);
+    }
+
+    .log-success small {
+      border-left-color: var(--bbva-success);
+    }
+
+    .log-warning {
+      color: var(--bbva-warning);
+      border-left-color: var(--bbva-warning);
+      background-color: rgba(255, 193, 7, 0.05);
+    }
+
+    .log-warning small {
+      border-left-color: var(--bbva-warning);
+    }
+
+    .log-error {
+      color: var(--bbva-error);
+      border-left-color: var(--bbva-error);
+      background-color: rgba(220, 53, 69, 0.05);
+    }
+
+    .log-error small {
+      border-left-color: var(--bbva-error);
+    }
+
+    /* Mejorar la legibilidad de URLs largas */
+    .log-entry .url-break {
+      word-break: break-all;
+      font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-size: 11px;
+      background-color: rgba(0,0,0,0.05);
+      padding: 2px 4px;
+      border-radius: 3px;
+      display: inline-block;
+      margin: 2px 0;
+    }
+
+    /* Estilo para información jerárquica */
+    .log-entry .indent-1 {
+      padding-left: 20px;
+    }
+
+    .log-entry .indent-2 {
+      padding-left: 40px;
+    }
+
+    /* Scroll mejorado para logs */
+    .logs-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .logs-container::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb:hover {
+      background: #999;
+    }
+
+    /* ===============================================
+       SECCIÓN DE RESULTADOS PROMINENTE
+       =============================================== */
+    .results-section {
+      margin: 32px 0 60px 0; /* Agregado margen inferior de 60px */
+    }
+
+    .results-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--bbva-blue);
+      margin-bottom: 16px;
+      padding: 12px 0;
+      border-bottom: 2px solid var(--bbva-blue-light);
+    }
+
+    .results-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--bbva-border-light);
+      min-height: 150px;
+      position: relative;
+      margin-bottom: 40px; /* Agregado margen inferior adicional */
+    }
+
+    .results-content {
+      font-family: 'Inter', 'Arial', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .results-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      color: var(--bbva-gray);
+      font-style: italic;
+    }
+
+    .results-empty svg {
+      margin-bottom: 8px;
+      opacity: 0.5;
+    }
+
+    /* ===============================================
+       ESTILOS PARA RESULTADOS COPYABLES
+       =============================================== */
+    .result-item {
+      background: #f8f9fa;
+      border: 1px solid var(--bbva-border-light);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      position: relative;
+      transition: var(--transition-fast);
+    }
+
+    .result-item:hover {
+      border-color: var(--bbva-blue-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .result-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .result-title-item {
+      font-weight: 600;
+      color: var(--bbva-dark-gray);
+      font-size: 14px;
+    }
+
+    .copy-btn {
+      background: var(--bbva-blue);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .copy-btn:hover {
+      background: var(--bbva-blue-light);
+    }
+
+    .result-content {
+      font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+      font-size: 13px;
+      background: white;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      user-select: all;
+      cursor: text;
+    }
+
+    /* Indicador de copiado */
+    .copy-btn.copied {
+      background: var(--bbva-success);
+    }
+
+    .copy-btn.copied::after {
+      content: ' ✓';
+    }
+
+    /* Botón de copiar todo integrado - mismo estilo que copiar individual */
+    .export-btn {
+      background: var(--bbva-blue);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      margin-left: auto;
+    }
+
+    .export-btn:hover {
+      background: var(--bbva-blue-light);
+    }
+
+    .export-btn.copied {
+      background: var(--bbva-success);
+    }
+
+    /* ===============================================
+       SPINNER Y ANIMACIONES
+       =============================================== */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===============================================
+       RESPONSIVE DESIGN
+       =============================================== */
+    @media (max-width: 768px) {
+      .bbva-header {
+        padding: 12px;
+      }
+
+      .title-section {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .button-group {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .form-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+
+      .form-group label {
+        text-align: left;
+        min-width: auto;
+      }
+
+      .form-group input[type="text"] {
+        width: 100%;
+      }
+
+      .logs-container {
+        max-height: 250px; /* Reducir en móviles */
+      }
+    }
+</style>
